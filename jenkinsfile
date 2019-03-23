@@ -33,23 +33,23 @@ def version, mvnCmd = "mvn -s config/cicd-settings-nexus3.xml"
      
         stage('Build Docker Image') {
             steps {
-                sh 'node --version'
-                sh 'svn --version'
-            checkout scm
-            def dockerfile = 'Dockerfile'
-            def sbimagex= docker.build("sbimagex:${env.BUILD_ID}", "-f ${dockerfile} .") 
-            docker.withRegistry('https://registry.example.com', 'credentials-id') 
-            {
+              script {
+                        sh 'node --version'
+                        sh 'svn --version'
+                        checkout scm
+                        def dockerfile = 'Dockerfile'
+                        def sbimagex= docker.build("sbimagex:${env.BUILD_ID}", "-f ${dockerfile} .") 
+                        docker.withRegistry('https://registry.example.com', 'credentials-id') 
+                        {
+                            def sbimagey = docker.build("sbimagex:${env.BUILD_ID}")
+                            /* Push the container to the custom Registry */
+                            sbimagey.push()
+                        }
 
-                def sbimagey = docker.build("sbimagex:${env.BUILD_ID}")
 
-                /* Push the container to the custom Registry */
-                sbimagey.push()
-            }
-
-
-            }
-        }
+                      }
+                    }
+           }
     
 
 
