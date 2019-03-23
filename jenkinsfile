@@ -1,4 +1,5 @@
 def version, mvnCmd = "mvn -s config/cicd-settings-nexus3.xml"
+
       pipeline {
         agent {
           label 'maven'
@@ -23,7 +24,9 @@ def version, mvnCmd = "mvn -s config/cicd-settings-nexus3.xml"
           stage('Code Analysis') {
             steps {
               script {
-                sh "${mvnCmd} sonar:sonar -Dsonar.host.url=http://sonarqube:9000 -DskipTests=true"
+                sh "mvn sonar:sonar \
+                    -Dsonar.host.url=http://sonarqube-cicd-admin.apps.ose.hcitc-unisys.com \
+                    -Dsonar.login=ecd9ce817499a04aef9c92f5dd3140dc70694414"
               }
             }
           }
