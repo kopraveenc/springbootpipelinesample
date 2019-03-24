@@ -64,7 +64,7 @@ pipeline {
               script {
                 openshift.withCluster() {
                   openshift.withProject(env.DEV_PROJECT) {
-                    openshift.newBuild("--name=uscis-egis-ms-base", "--dockerfile='Dockerfile'", "--allow-missing-images")
+                    openshift.newBuild("--name=uscis-egis-ms-base", "--dockerfile='/Dockerfile'", "--allow-missing-images")
                   }
                 }
               }
