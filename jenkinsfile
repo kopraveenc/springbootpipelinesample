@@ -5,53 +5,39 @@ def version, mvnCmd = "mvn -s config/cicd-settings-nexus3.xml"
         agent {label 'maven' }
         stages 
         {
-          stage('Build App') {
-            steps {
-              git branch: 'master', url: 'https://github.com/kopraveenc/springbootpipelinesample.git'
-            //   script {
-            //       def pom = readMavenPom file: 'pom.xml'
-            //       version = pom.version
-            //   }
-              sh "${mvnCmd} install -DskipTests=true"
-            }
-          }
-          stage('Test') {
-            steps {
-              sh "${mvnCmd} test"
-              step([$class: 'JUnitResultArchiver', testResults: '**/target/surefire-reports/TEST-*.xml'])
-            }
-          }
-          stage('Code Analysis') {
-            steps {
-              script {
-                sh "mvn sonar:sonar \
-                    -Dsonar.host.url=http://sonarqube-cicd-admin.apps.ose.hcitc-unisys.com \
-                    -Dsonar.login=ecd9ce817499a04aef9c92f5dd3140dc70694414"
-              }
-            }
-          }
+          // stage('Build App') {
+          //   steps {
+          //     git branch: 'master', url: 'https://github.com/kopraveenc/springbootpipelinesample.git'
+          //   //   script {
+          //   //       def pom = readMavenPom file: 'pom.xml'
+          //   //       version = pom.version
+          //   //   }
+          //     sh "${mvnCmd} install -DskipTests=true"
+          //   }
+          // }
+          // stage('Test') {
+          //   steps {
+          //     sh "${mvnCmd} test"
+          //     step([$class: 'JUnitResultArchiver', testResults: '**/target/surefire-reports/TEST-*.xml'])
+          //   }
+          // }
+          // stage('Code Analysis') {
+          //   steps {
+          //     script {
+          //       sh "mvn sonar:sonar \
+          //           -Dsonar.host.url=http://sonarqube-cicd-admin.apps.ose.hcitc-unisys.com \
+          //           -Dsonar.login=ecd9ce817499a04aef9c92f5dd3140dc70694414"
+          //     }
+          //   }
+          // }
 
         stage('Build Docker Image')  {
-          steps{
-            script {
-              
-                        checkout scm 
-                      def sbimagex= docker.build("sbimagex:latest") 
-
-                      //   docker.withRegistry('https://registry.hub.docker.com', 'docker-hub-credentials') 
-                      //   {
-                      //   sbimagex.push("${env.BUILD_NUMBER}")
-                      //   sbimagex.push("latest")
-                      //  }
-                        // docker.withRegistry('https://registry.example.com', 'credentials-id') 
-                        // {
-                        //     def sbimagey = docker.build("sbimagex:${env.BUILD_ID}")
-                        //     /* Push the container to the custom Registry */
-                        //     sbimagey.push()
-                        // }
-                      }
+          steps {
+                    docker.withRegistry('https://sds.redii.net/', 'redii-e.joe') {
+                        def app = docker.build("sds.redii.net/e-joe/spring-pet-clinic-demo:v1",'.')
+                        app.push()
                     }
-                }
+        
            }
         }
       
