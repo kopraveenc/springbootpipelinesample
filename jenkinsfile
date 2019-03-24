@@ -21,34 +21,36 @@ if (BRANCH_NAME != 'master') {
 pipeline {
   agent { label 'maven' }
   stages {
+   
     stage('Build App') {
-      steps {
-       // notifyBuild('STARTED')
-        sh "${mvnCmd} install -DskipTests=true"
-      }
-    }
-    // stage('Test') {
-    //   // steps {
-    //   //   sh "${mvnCmd} test"
-    //   //   step([$class: 'JUnitResultArchiver', testResults: '**/target/surefire-reports/TEST-*.xml'])
-    //   //   jacoco classPattern: 'target/classes', execPattern: 'target/**.exec', sourcePattern: 'src/main/java'
-    //   // }
-    // }
-    // stage('Code Analysis') {
-    //   steps {
-    //     // withSonarQubeEnv('ODOS-Demo-Prep-Sonar') {
-    //     //   sh "${mvnCmd} sonar:sonar -DskipTests=true"
-    //     // }
-    //     // withCredentials([string(credentialsId: 'jenkins-sonar-token', variable: 'SONARUSER')]) {
-    //     //   sh "${mvnCmd} sonar:sonar -Dsonar.host.url=http://54.174.83.127:9000 -DskipTests=true -Dsonar.login=${env.SONARUSER}"
-    //     // }
-    //   }
-    // }
-    stage('Archive App') {
-      steps {
-        sh "${mvnCmd} deploy -X -DskipTests=true"
-      }
-    }
+            steps {
+              git branch: 'master', url: 'https://github.com/kopraveenc/springbootpipelinesample.git'
+               script {
+                   def pom = readMavenPom file: 'pom.xml'
+                   version = pom.version
+               }
+              sh "${mvnCmd} install -DskipTests=true"
+            }
+          }
+          stage('Test') {
+            steps {
+              sh "${mvnCmd} test"
+              step([$class: 'JUnitResultArchiver', testResults: '**/target/surefire-reports/TEST-*.xml'])
+            }
+          }
+          stage('Code Analysis') {
+            steps {
+              script {
+                sh "mvn sonar:sonar \
+                    -Dsonar.host.url=http://sonarqube-cicd-admin.apps.ose.hcitc-unisys.com \
+                    -Dsonar.login=ecd9ce817499a04aef9c92f5dd3140dc70694414"
+              }
+            }
+          }
+
+
+
+
     stage('Create Image Builder') {
       when {
         expression {
