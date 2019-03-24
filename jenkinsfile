@@ -64,7 +64,7 @@ pipeline {
               script {
                 openshift.withCluster() {
                   openshift.withProject(env.DEV_PROJECT) {
-                    openshift.newBuild("--name=uscis-egis-ms-base", "--image-stream=redhat-openjdk18-openshift:latest", "--binary=true --allow-missing-images")
+                    openshift.newBuild("--name=uscis-egis-ms-base", "--image-name=registry.access.redhat.com/openjdk/openjdk-11-rhel7:latest", "--binary=true --allow-missing-images")
                   }
                 }
               }
