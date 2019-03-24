@@ -1,7 +1,7 @@
 def version, mvnCmd = "mvn -s config/cicd-settings-nexus3.xml"
 //def version, mvnCmd = "mvn"
 
-def BASE_IMAGE = 'sb-api'
+def BASE_IMAGE = 'redhat-openjdk18-openshift:latest'
 def IMAGE = BASE_IMAGE
 def DEPLOY_BRANCHES = ['master']
 def APPROVAL_BRANCHES = ['master']
