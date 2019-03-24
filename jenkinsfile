@@ -34,8 +34,7 @@ def version, mvnCmd = "mvn -s config/cicd-settings-nexus3.xml"
         stage('Build Docker Image') {
             steps {
               script {
-                        sh 'node --version'
-                        sh 'svn --version'
+                        
                         checkout scm
                         def dockerfile = 'Dockerfile'
                         def sbimagex= docker.build("sbimagex:${env.BUILD_ID}", "-f ${dockerfile} .") 
