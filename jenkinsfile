@@ -32,6 +32,7 @@ def version, mvnCmd = "mvn -s config/cicd-settings-nexus3.xml"
           }
 
         stage('Build Docker Image')  {
+          steps{
                         checkout scm                        
                         def sbimagex= docker.build("sbimagex:latest") 
 
@@ -46,9 +47,8 @@ def version, mvnCmd = "mvn -s config/cicd-settings-nexus3.xml"
                         //     /* Push the container to the custom Registry */
                         //     sbimagey.push()
                         // }
-
-
                       }
+                 }
            }
         }
       }
