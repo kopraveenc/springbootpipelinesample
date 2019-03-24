@@ -48,17 +48,21 @@ pipeline {
             }
           }
 
- stage('Build Image and Deploy to OCP') {
+         stage('Build Image and Deploy to OCP') {
      
-      steps {
-        script {
-          sh "curl -X POST -k https://ose.hcitc-unisys.com/apis/build.openshift.io/v1/namespaces/uscis-egis-dev/buildconfigs/uscis-ms-1/webhooks/baa79dd785251177/generic"
-              
-            }
-          }
-        }
-      }
-    }
+            steps {
+              script {
+                sh "curl -X POST -k https://ose.hcitc-unisys.com/apis/build.openshift.io/v1/namespaces/uscis-egis-dev/buildconfigs/uscis-ms-1/webhooks/baa79dd785251177/generic"
+                    
+                  }
+                }
+              }
+
+
+  }
+}
+      
+  
 
 
 
@@ -155,7 +159,7 @@ pipeline {
   //     }
   //   }
   // }
-}
+//}
 
   // post {
   //   success {
@@ -165,7 +169,7 @@ pipeline {
   //     notifyBuild('FAILURE')
   //   }
   // }
-}
+// }
 
 // def sendApprovalEmail(String image, String deployment) {
 //   def subject = "Jenkins job ${image} is ready for deployment to ${deployment}"
