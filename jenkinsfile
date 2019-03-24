@@ -38,9 +38,10 @@ def version, mvnCmd = "mvn -s config/cicd-settings-nexus3.xml"
                         app.push()
                     }
         
-           }
+                 }
+            }
+          }
         }
-      
       
 
 
