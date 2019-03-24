@@ -3,7 +3,8 @@ def version, mvnCmd = "mvn -s config/cicd-settings-nexus3.xml"
       pipeline 
       {
         agent {label 'maven' }
-        stages {
+        stages 
+        {
           stage('Build App') {
             steps {
               git branch: 'master', url: 'https://github.com/kopraveenc/springbootpipelinesample.git'
@@ -28,19 +29,14 @@ def version, mvnCmd = "mvn -s config/cicd-settings-nexus3.xml"
                     -Dsonar.login=ecd9ce817499a04aef9c92f5dd3140dc70694414"
               }
             }
-          }
+          
 
-
-
-     
-        stage('Build Docker Image') {
-            steps {
-              script {
-                        
+        stage('Build Docker Image')  {
                         checkout scm                        
                         def sbimagex= docker.build("sbimagex:latest") 
 
-                        docker.withRegistry('https://registry.hub.docker.com', 'docker-hub-credentials') {
+                        docker.withRegistry('https://registry.hub.docker.com', 'docker-hub-credentials') 
+                        {
                         sbimagex.push("${env.BUILD_NUMBER}")
                         sbimagex.push("latest")
 
@@ -53,18 +49,9 @@ def version, mvnCmd = "mvn -s config/cicd-settings-nexus3.xml"
 
 
                       }
-                    }
            }
-    
-
-
-
-
-
-        
-
-
         }
+      }
       }
 
 
