@@ -2,7 +2,7 @@ def version, mvnCmd = "mvn -s config/cicd-settings-nexus3.xml"
 //def version, mvnCmd = "mvn"
 
 def BASE_IMAGE = 'redhat-openjdk18-openshift:latest'
-def IMAGE = BASE_IMAGE
+def IMAGE = "uscis-egis-ms-base"
 def DEPLOY_BRANCHES = ['master']
 def APPROVAL_BRANCHES = ['master']
 def BRANCH_NAME = 'master'
@@ -55,7 +55,7 @@ pipeline {
               expression {
                 openshift.withCluster() {
                   openshift.withProject(PROJECT) {
-                    return !openshift.selector("dc", "uscis-egis-dev").exists();
+                    return !openshift.selector("dc", "uscis-egis-ms-base").exists();
                   }
                 }
               }
@@ -64,7 +64,7 @@ pipeline {
               script {
                 openshift.withCluster() {
                   openshift.withProject(PROJECT) {
-                    openshift.newBuild("--name=uscis-egis-dev", "--image-stream=openjdk-11-rhel7", "--binary=true")
+                    openshift.newBuild("--name=uscis-egis-ms-base", "--image-stream=openjdk-11-rhel7", "--binary=true")
                   }
                 }
               }
@@ -81,7 +81,7 @@ pipeline {
         script {
           openshift.withCluster() {
             openshift.withProject(PROJECT) {
-              openshift.selector("bc", IMAGE).startBuild("--from-dir=oc-build", "--wait=true")
+              openshift.selector("dc", IMAGE).startBuild("--from-dir=oc-build", "--wait=true")
             }
           }
         }
