@@ -49,29 +49,29 @@ pipeline {
           }
 
 
+ stage('Create Image Builder') {
 
-
-    stage('Create Image Builder') {
-      when {
-        expression {
-          DEPLOY == true &&
-          openshift.withCluster() {
-            openshift.withProject(PROJECT) {
-              return !openshift.selector("bc", IMAGE).exists();
+            when {
+              expression {
+                openshift.withCluster() {
+                  openshift.withProject(PROJECT) {
+                    return !openshift.selector("dc", "uscis-egis-dev").exists();
+                  }
+                }
+              }
+            }
+            steps {
+              script {
+                openshift.withCluster() {
+                  openshift.withProject(PROJECT) {
+                    openshift.newBuild("--name=uscis-egis-dev", "--image-stream=openjdk-11-rhel7", "--binary=true")
+                  }
+                }
+              }
             }
           }
-        }
-      }
-      steps {
-        script {
-          openshift.withCluster() {
-            openshift.withProject(PROJECT) {
-              openshift.newBuild("--name=${IMAGE}", "--image-stream=openshift/redhat-openjdk18-openshift:1.1", "--binary=true")
-            }
-          }
-        }
-      }
-    }
+
+
     stage('Build Image') {
       when {expression {DEPLOY == true} }
       steps {
