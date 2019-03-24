@@ -1,10 +1,208 @@
 def version, mvnCmd = "mvn -s config/cicd-settings-nexus3.xml"
+//def version, mvnCmd = "mvn"
 
-      pipeline 
-      {
-        agent {label 'maven' }
-        stages 
-        {
+def BASE_IMAGE = 'sb-api'
+def IMAGE = BASE_IMAGE
+def DEPLOY_BRANCHES = ['master']
+def APPROVAL_BRANCHES = ['master']
+
+def ENVIRONMENT = BRANCH_NAME
+
+def DEPLOY = DEPLOY_BRANCHES.contains(BRANCH_NAME)
+def NEEDS_APPROVAL = APPROVAL_BRANCHES.contains(BRANCH_NAME)
+def PROJECT = 'uscis-egis-dev'
+
+if (BRANCH_NAME != 'master') {
+  IMAGE = IMAGE + '-' + BRANCH_NAME
+} else {
+  ENVIRONMENT = 'Prod'
+}
+
+pipeline {
+  agent { label 'maven' }
+  stages {
+    stage('Build App') {
+      steps {
+        notifyBuild('STARTED')
+        sh "${mvnCmd} install -DskipTests=true"
+      }
+    }
+    stage('Test') {
+      steps {
+        sh "${mvnCmd} test"
+        step([$class: 'JUnitResultArchiver', testResults: '**/target/surefire-reports/TEST-*.xml'])
+        jacoco classPattern: 'target/classes', execPattern: 'target/**.exec', sourcePattern: 'src/main/java'
+      }
+    }
+    stage('Code Analysis') {
+      steps {
+        // withSonarQubeEnv('ODOS-Demo-Prep-Sonar') {
+        //   sh "${mvnCmd} sonar:sonar -DskipTests=true"
+        // }
+        // withCredentials([string(credentialsId: 'jenkins-sonar-token', variable: 'SONARUSER')]) {
+        //   sh "${mvnCmd} sonar:sonar -Dsonar.host.url=http://54.174.83.127:9000 -DskipTests=true -Dsonar.login=${env.SONARUSER}"
+        // }
+      }
+    }
+    stage('Archive App') {
+      steps {
+        sh "${mvnCmd} deploy -X -DskipTests=true"
+      }
+    }
+    stage('Create Image Builder') {
+      when {
+        expression {
+          DEPLOY == true &&
+          openshift.withCluster() {
+            openshift.withProject(PROJECT) {
+              return !openshift.selector("bc", IMAGE).exists();
+            }
+          }
+        }
+      }
+      steps {
+        script {
+          openshift.withCluster() {
+            openshift.withProject(PROJECT) {
+              openshift.newBuild("--name=${IMAGE}", "--image-stream=openshift/redhat-openjdk18-openshift:1.1", "--binary=true")
+            }
+          }
+        }
+      }
+    }
+    stage('Build Image') {
+      when {expression {DEPLOY == true} }
+      steps {
+        sh "rm -rf oc-build && mkdir -p oc-build/deployments"
+        sh "cp target/*.jar oc-build/deployments/"
+
+        script {
+          openshift.withCluster() {
+            openshift.withProject(PROJECT) {
+              openshift.selector("bc", IMAGE).startBuild("--from-dir=oc-build", "--wait=true")
+            }
+          }
+        }
+      }
+    }
+    stage('Create DEV') {
+      when {
+        expression {
+          DEPLOY == true &&
+          openshift.withCluster() {
+            openshift.withProject(PROJECT) {
+              return !openshift.selector('dc', IMAGE).exists()
+            }
+          }
+        }
+      }
+      steps {
+        script {
+          openshift.withCluster() {
+            openshift.withProject(PROJECT) {
+              def app = openshift.newApp("${IMAGE}:latest")
+              app.narrow("svc").expose();
+
+              def dc = openshift.selector("dc", IMAGE)
+              while (dc.object().spec.replicas != dc.object().status.availableReplicas) {
+                  sleep 10
+              }
+              openshift.set("triggers", "dc/${IMAGE}", "--manual")
+            }
+          }
+        }
+      }
+    }
+  stage('Production Approval') {
+    agent none
+    when {expression {NEEDS_APPROVAL == true}}
+    steps {
+      sendApprovalEmail(BASE_IMAGE, ENVIRONMENT)
+      timeout(60) {
+        input message: "Approve ${BASE_IMAGE} for deployment to ${ENVIRONMENT}?", ok: 'Approve'
+      }
+    }
+  }
+  stage('Deploy DEV') {
+    when {expression{DEPLOY == true }}
+    steps {
+      script {
+        openshift.withCluster() {
+          openshift.withProject(PROJECT) {
+            openshift.selector("dc", IMAGE).rollout().latest();
+          }
+        }
+      }
+    }
+  }
+}
+  post {
+    success {
+      notifyBuild("SUCCESSFUL")
+    }
+    failure {
+      notifyBuild('FAILURE')
+    }
+  }
+}
+
+// def sendApprovalEmail(String image, String deployment) {
+//   def subject = "Jenkins job ${image} is ready for deployment to ${deployment}"
+
+//   def body = """<p>Jenkins job <b>${image}</b> has successfully passed its quality gates and is ready for deployment to <b>${deployment}</b></p>
+//     <p><a href="${env.BUILD_URL}">View the build status</a></p>
+//     <p><a href="${env.BUILD_URL}/input">Approve or reject ${image} for automated deployment to <b>${deployment}</b></a>"""
+//   mail body: body, from: 'unisys.odosii.jenkins@gmail.com', subject: subject, to: 'brandon.whiteman@coheretechnology.com', charset: 'UTF-8', mimeType: 'text/html'
+// }
+
+// def notifyBuild(String buildStatus = 'STARTED') {
+//   // build status of null means successful
+//   buildStatus = buildStatus ?: 'SUCCESSFUL'
+
+//   def color = 'danger'  //red
+//   def subject = "${buildStatus}: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]'"
+//   def summary = "${subject} (${env.BUILD_URL})"
+
+//   // Override default values based on build status
+//   if (buildStatus == 'STARTED' || buildStatus == 'SUCCESSFUL' || buildStatus == 'SUCCESS') {
+//     color = 'good'
+//   }
+
+//   // Send notifications
+//   slackSend(color: color, message: summary, channel: '#build-status')
+// }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      // pipeline 
+      // {
+      //   agent {label 'maven' }
+      //   stages 
+      //   {
           // stage('Build App') {
           //   steps {
           //     git branch: 'master', url: 'https://github.com/kopraveenc/springbootpipelinesample.git'
@@ -31,17 +229,17 @@ def version, mvnCmd = "mvn -s config/cicd-settings-nexus3.xml"
           //   }
           // }
 
-        stage('Build Docker Image')  {
-          steps {
-                    docker.withRegistry('http://nexus-cicd-admin.apps.ose.hcitc-unisys.com/repository/docker/', 'dockerrepocredentials') {
-                        def app = docker.build("http://nexus-cicd-admin.apps.ose.hcitc-unisys.com/repository/docker/sbx:latest",'.')
-                        app.push()
-                    }
+        // stage('Build Docker Image')  {
+        //   steps {
+        //             docker.withRegistry('http://nexus-cicd-admin.apps.ose.hcitc-unisys.com/repository/docker/', 'dockerrepocredentials') {
+        //                 def app = docker.build("http://nexus-cicd-admin.apps.ose.hcitc-unisys.com/repository/docker/sbx:latest",'.')
+        //                 app.push()
+        //             }
         
-                 }
-            }
-          }
-        }
+        //          }
+        //     }
+        //   }
+        // }
 
 
 
