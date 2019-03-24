@@ -36,8 +36,9 @@ def version, mvnCmd = "mvn -s config/cicd-settings-nexus3.xml"
             script {
               
                         checkout scm    
+                        docker build -t sbx:latest .
 
-                        def sbimagex= docker.build("sbimagex:latest") 
+                      //  def sbimagex= docker.build("sbimagex:latest") 
 
                       //   docker.withRegistry('https://registry.hub.docker.com', 'docker-hub-credentials') 
                       //   {
