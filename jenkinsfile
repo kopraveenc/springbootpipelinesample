@@ -52,11 +52,7 @@ pipeline {
      
       steps {
         script {
-          
-          openshift.withCluster() {
-            openshift.withProject(env.DEV_PROJECT) {
-              openshift.startBuild("uscis-ms-1 -n uscis-egis-dev", "--wait=true")
-
+          sh "curl -X POST -k https://ose.hcitc-unisys.com/apis/build.openshift.io/v1/namespaces/uscis-egis-dev/buildconfigs/uscis-ms-1/webhooks/baa79dd785251177/generic"
               
             }
           }
@@ -71,72 +67,72 @@ pipeline {
 
 
 
- stage('Create Image Builder') {
+//  stage('Create Image Builder') {
 
-            when {
-              expression {
-                openshift.withCluster() {
-                  openshift.withProject(env.DEV_PROJECT) {
-                    return !openshift.selector("dc", "uscis-egis-ms-base").exists();
-                  }
-                }
-              }
-            }
-            steps {
-              script {
-                openshift.withCluster() {
-                  openshift.withProject(env.DEV_PROJECT) {
-                    openshift.newBuild("--name=uscis-egis-ms-base", "--dockerfile=' FROM Dockerfile'", "--allow-missing-images")
-                  }
-                }
-              }
-            }
-          }
+//             when {
+//               expression {
+//                 openshift.withCluster() {
+//                   openshift.withProject(env.DEV_PROJECT) {
+//                     return !openshift.selector("dc", "uscis-egis-ms-base").exists();
+//                   }
+//                 }
+//               }
+//             }
+//             steps {
+//               script {
+//                 openshift.withCluster() {
+//                   openshift.withProject(env.DEV_PROJECT) {
+//                     openshift.newBuild("--name=uscis-egis-ms-base", "--dockerfile=' FROM Dockerfile'", "--allow-missing-images")
+//                   }
+//                 }
+//               }
+//             }
+//           }
 
 
-    stage('Build Image') {
-      when {expression {DEPLOY == true} }
-      steps {
-        sh "rm -rf oc-build && mkdir -p oc-build/deployments"
-        sh "cp target/*.jar oc-build/deployments/"
+//     stage('Build Image') {
+//       when {expression {DEPLOY == true} }
+//       steps {
+//         sh "rm -rf oc-build && mkdir -p oc-build/deployments"
+//         sh "cp target/*.jar oc-build/deployments/"
 
-        script {
-          openshift.withCluster() {
-            openshift.withProject(env.DEV_PROJECT) {
-              openshift.selector("dc", IMAGE).startBuild("--from-dir=oc-build", "--wait=true")
-            }
-          }
-        }
-      }
-    }
-    stage('Create DEV') {
-      when {
-        expression {
-          DEPLOY == true &&
-          openshift.withCluster() {
-            openshift.withProject(PROJECT) {
-              return !openshift.selector('dc', IMAGE).exists()
-            }
-          }
-        }
-      }
-      steps {
-        script {
-          openshift.withCluster() {
-            openshift.withProject(PROJECT) {
-              def app = openshift.newApp("${IMAGE}:latest")
-              app.narrow("svc").expose();
+//         script {
+//           openshift.withCluster() {
+//             openshift.withProject(env.DEV_PROJECT) {
+//               openshift.selector("dc", IMAGE).startBuild("--from-dir=oc-build", "--wait=true")
+//             }
+//           }
+//         }
+//       }
+//     }
+//     stage('Create DEV') {
+//       when {
+//         expression {
+//           DEPLOY == true &&
+//           openshift.withCluster() {
+//             openshift.withProject(PROJECT) {
+//               return !openshift.selector('dc', IMAGE).exists()
+//             }
+//           }
+//         }
+//       }
+//       steps {
+//         script {
+//           openshift.withCluster() {
+//             openshift.withProject(PROJECT) {
+//               def app = openshift.newApp("${IMAGE}:latest")
+//               app.narrow("svc").expose();
 
-              def dc = openshift.selector("dc", IMAGE)
-              while (dc.object().spec.replicas != dc.object().status.availableReplicas) {
-                  sleep 10
-              }
-              openshift.set("triggers", "dc/${IMAGE}", "--manual")
-            }
-          }
-        }
-      }
-    }
+//               def dc = openshift.selector("dc", IMAGE)
+//               while (dc.object().spec.replicas != dc.object().status.availableReplicas) {
+//                   sleep 10
+//               }
+//               openshift.set("triggers", "dc/${IMAGE}", "--manual")
+//             }
+//           }
+//         }
+//       }
+//     }
   // stage('Production Approval') {
   //   agent none
   //   when {expression {NEEDS_APPROVAL == true}}
