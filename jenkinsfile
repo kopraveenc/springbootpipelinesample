@@ -37,7 +37,7 @@ pipeline {
               step([$class: 'JUnitResultArchiver', testResults: '**/target/surefire-reports/TEST-*.xml'])
             }
         }
-    stage('Code Analysis')  {steps  { script {sh SONAR} } }
+    stage('Code Analysis SonarQ')  {steps  { script {sh SONAR} } }
     stage('Build Image and Deploy to OCP')  { steps {script {sh OCPWH}} }
   }
 
