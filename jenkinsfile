@@ -1,15 +1,13 @@
 def version, mvnCmd = "mvn -s config/cicd-settings-nexus3.xml"
-//def version, mvnCmd = "mvn"
-
 def BASE_IMAGE = 'redhat-openjdk18-openshift:latest'
 def IMAGE = "uscis-egis-ms-base"
-def DEPLOY_BRANCHES = ['master']
-def APPROVAL_BRANCHES = ['master']
 def BRANCH_NAME = 'master'
-def ENVIRONMENT = BRANCH_NAME
+def GITURL = 'https://github.com/kopraveenc/springbootpipelinesample.git'
+def SONAR = "mvn sonar:sonar \
+                    -Dsonar.host.url=http://sonarqube-cicd-admin.apps.ose.hcitc-unisys.com \
+                    -Dsonar.login=ecd9ce817499a04aef9c92f5dd3140dc70694414"
+def OCPWH = "curl -X POST -k https://ose.hcitc-unisys.com/apis/build.openshift.io/v1/namespaces/uscis-egis-dev/buildconfigs/uscis-ms-1/webhooks/baa79dd785251177/generic"
 
-def DEPLOY = DEPLOY_BRANCHES.contains(BRANCH_NAME)
-def NEEDS_APPROVAL = APPROVAL_BRANCHES.contains(BRANCH_NAME)
 def PROJECT = 'uscis-egis-dev'
 
 if (BRANCH_NAME != 'master') {
@@ -20,11 +18,12 @@ if (BRANCH_NAME != 'master') {
 
 pipeline {
   agent { label 'maven' }
+   notifyBuild("STARTED")
   stages {
    
     stage('Build App') {
             steps {
-              git branch: 'master', url: 'https://github.com/kopraveenc/springbootpipelinesample.git'
+              git branch: BRANCH_NAME , url: GITURL
                script {
                    def pom = readMavenPom file: 'pom.xml'
                    version = pom.version
@@ -41,9 +40,7 @@ pipeline {
           stage('Code Analysis') {
             steps {
               script {
-                sh "mvn sonar:sonar \
-                    -Dsonar.host.url=http://sonarqube-cicd-admin.apps.ose.hcitc-unisys.com \
-                    -Dsonar.login=ecd9ce817499a04aef9c92f5dd3140dc70694414"
+                sh SONAR
               }
             }
           }
@@ -52,7 +49,7 @@ pipeline {
      
             steps {
               script {
-                sh "curl -X POST -k https://ose.hcitc-unisys.com/apis/build.openshift.io/v1/namespaces/uscis-egis-dev/buildconfigs/uscis-ms-1/webhooks/baa79dd785251177/generic"
+                sh OCPWH
                     
                   }
                 }
@@ -74,20 +71,6 @@ pipeline {
       
 
 
-
-def sendApprovalEmail(String image, String deployment) {
- // def subject = "Jenkins job ${image} is ready for deployment to ${deployment}"
-    def subject = "Jenkins job  is ready for deployment ...."
-
-  // def body = """<p>Jenkins job <b>${image}</b> has successfully passed its quality gates and is ready for deployment to <b>${deployment}</b></p>
-  //   <p><a href="${env.BUILD_URL}">View the build status</a></p>
-  //   <p><a href="${env.BUILD_URL}/input">Approve or reject ${image} for automated deployment to <b>${deployment}</b></a>"""
-
-def body = "Approval email message......"
-
-  mail body: body, from: 'unisys.uscis-egis.jenkins@gmail.com', subject: subject, to: 'praveen.kosgi@unisys.com', charset: 'UTF-8', mimeType: 'text/html'
-}
-
 def notifyBuild(String buildStatus = 'STARTED') {
   // build status of null means successful
   buildStatus = buildStatus ?: 'SUCCESSFUL'
@@ -106,267 +89,17 @@ def notifyBuild(String buildStatus = 'STARTED') {
 }
 
 
+def sendApprovalEmail(String image, String deployment) {
+ // def subject = "Jenkins job ${image} is ready for deployment to ${deployment}"
+    def subject = "Jenkins job  is ready for deployment ...."
+
+  // def body = """<p>Jenkins job <b>${image}</b> has successfully passed its quality gates and is ready for deployment to <b>${deployment}</b></p>
+  //   <p><a href="${env.BUILD_URL}">View the build status</a></p>
+  //   <p><a href="${env.BUILD_URL}/input">Approve or reject ${image} for automated deployment to <b>${deployment}</b></a>"""
+
+def body = "Approval email message......"
+
+  mail body: body, from: 'unisys.uscis-egis.jenkins@gmail.com', subject: subject, to: 'praveen.kosgi@unisys.com', charset: 'UTF-8', mimeType: 'text/html'
+}
 
 
-
-  
-
-
-
-
-
-
-
-
-//  stage('Create Image Builder') {
-
-//             when {
-//               expression {
-//                 openshift.withCluster() {
-//                   openshift.withProject(env.DEV_PROJECT) {
-//                     return !openshift.selector("dc", "uscis-egis-ms-base").exists();
-//                   }
-//                 }
-//               }
-//             }
-//             steps {
-//               script {
-//                 openshift.withCluster() {
-//                   openshift.withProject(env.DEV_PROJECT) {
-//                     openshift.newBuild("--name=uscis-egis-ms-base", "--dockerfile=' FROM Dockerfile'", "--allow-missing-images")
-//                   }
-//                 }
-//               }
-//             }
-//           }
-
-
-//     stage('Build Image') {
-//       when {expression {DEPLOY == true} }
-//       steps {
-//         sh "rm -rf oc-build && mkdir -p oc-build/deployments"
-//         sh "cp target/*.jar oc-build/deployments/"
-
-//         script {
-//           openshift.withCluster() {
-//             openshift.withProject(env.DEV_PROJECT) {
-//               openshift.selector("dc", IMAGE).startBuild("--from-dir=oc-build", "--wait=true")
-//             }
-//           }
-//         }
-//       }
-//     }
-//     stage('Create DEV') {
-//       when {
-//         expression {
-//           DEPLOY == true &&
-//           openshift.withCluster() {
-//             openshift.withProject(PROJECT) {
-//               return !openshift.selector('dc', IMAGE).exists()
-//             }
-//           }
-//         }
-//       }
-//       steps {
-//         script {
-//           openshift.withCluster() {
-//             openshift.withProject(PROJECT) {
-//               def app = openshift.newApp("${IMAGE}:latest")
-//               app.narrow("svc").expose();
-
-//               def dc = openshift.selector("dc", IMAGE)
-//               while (dc.object().spec.replicas != dc.object().status.availableReplicas) {
-//                   sleep 10
-//               }
-//               openshift.set("triggers", "dc/${IMAGE}", "--manual")
-//             }
-//           }
-//         }
-//       }
-//     }
-  // stage('Production Approval') {
-  //   agent none
-  //   when {expression {NEEDS_APPROVAL == true}}
-  //   steps {
-  //     sendApprovalEmail(BASE_IMAGE, ENVIRONMENT)
-  //     timeout(60) {
-  //       input message: "Approve ${BASE_IMAGE} for deployment to ${ENVIRONMENT}?", ok: 'Approve'
-  //     }
-  //   }
-  // }
-  // stage('Deploy DEV') {
-  //   when {expression{DEPLOY == true }}
-  //   steps {
-  //     script {
-  //       openshift.withCluster() {
-  //         openshift.withProject(PROJECT) {
-  //           openshift.selector("dc", IMAGE).rollout().latest();
-  //         }
-  //       }
-  //     }
-  //   }
-  // }
-//}
-
-
-
-      // pipeline 
-      // {
-      //   agent {label 'maven' }
-      //   stages 
-      //   {
-          // stage('Build App') {
-          //   steps {
-          //     git branch: 'master', url: 'https://github.com/kopraveenc/springbootpipelinesample.git'
-          //   //   script {
-          //   //       def pom = readMavenPom file: 'pom.xml'
-          //   //       version = pom.version
-          //   //   }
-          //     sh "${mvnCmd} install -DskipTests=true"
-          //   }
-          // }
-          // stage('Test') {
-          //   steps {
-          //     sh "${mvnCmd} test"
-          //     step([$class: 'JUnitResultArchiver', testResults: '**/target/surefire-reports/TEST-*.xml'])
-          //   }
-          // }
-          // stage('Code Analysis') {
-          //   steps {
-          //     script {
-          //       sh "mvn sonar:sonar \
-          //           -Dsonar.host.url=http://sonarqube-cicd-admin.apps.ose.hcitc-unisys.com \
-          //           -Dsonar.login=ecd9ce817499a04aef9c92f5dd3140dc70694414"
-          //     }
-          //   }
-          // }
-
-        // stage('Build Docker Image')  {
-        //   steps {
-        //             docker.withRegistry('http://nexus-cicd-admin.apps.ose.hcitc-unisys.com/repository/docker/', 'dockerrepocredentials') {
-        //                 def app = docker.build("http://nexus-cicd-admin.apps.ose.hcitc-unisys.com/repository/docker/sbx:latest",'.')
-        //                 app.push()
-        //             }
-        
-        //          }
-        //     }
-        //   }
-        // }
-
-
-
-          /*
-          stage('Archive App') {
-            steps {
-              sh "${mvnCmd} deploy -DskipTests=true -P nexus3"
-            }
-          }*/
-
-      //     stage('Create Image Builder') {
-
-      //       when {
-      //         expression {
-      //           openshift.withCluster() {
-      //             openshift.withProject(env.DEV_PROJECT) {
-      //               return !openshift.selector("dc", "uscis-egis-dev").exists();
-      //             }
-      //           }
-      //         }
-      //       }
-      //       steps {
-      //         script {
-      //           openshift.withCluster() {
-      //             openshift.withProject(env.DEV_PROJECT) {
-      //               openshift.newBuild("--name=uscis-egis-dev", "--image-stream=redhat-openjdk18-openshift:1.3", "--binary=true")
-      //             }
-      //           }
-      //         }
-      //       }
-      //     }
-      //     stage('Build Image') {
-      //       steps {
-      //         sh "rm -rf ocp && mkdir -p ocp/deployments"
-      //         sh "pwd && ls -la target "
-      //         sh "cp target/*.jar ocp/deployments"
-
-      //         script {
-      //           openshift.withCluster() {
-      //             openshift.withProject(env.DEV_PROJECT) {
-      //               openshift.selector("dc", "uscis-egis-dev").startBuild("--from-dir=./ocp","--follow", "--wait=true")
-      //             }
-      //           }
-      //         }
-      //       }
-      //     }
-      //     stage('Create DEV') {
-      //       when {
-      //         expression {
-      //           openshift.withCluster() {
-      //             openshift.withProject(env.DEV_PROJECT) {
-      //               return !openshift.selector('dc', 'uscis-egis-dev').exists()
-      //             }
-      //           }
-      //         }
-      //       }
-      //       steps {
-      //         script {
-      //           openshift.withCluster() {
-      //             openshift.withProject(env.DEV_PROJECT) {
-      //               def app = openshift.newApp("uscis-egis-dev-sb:latest")
-      //               app.narrow("svc").expose();
-
-      //               //http://localhost:8080/actuator/health
-      //               openshift.set("probe dc/uscis-egis-dev --readiness --get-url=http://:8080/actuator/health --initial-delay-seconds=30 --failure-threshold=10 --period-seconds=10")
-      //               openshift.set("probe dc/uscis-egis-dev --liveness  --get-url=http://:8080/actuator/health --initial-delay-seconds=180 --failure-threshold=10 --period-seconds=10")
-
-      //               def dc = openshift.selector("dc", "uscis-egis-dev")
-      //               while (dc.object().spec.replicas != dc.object().status.availableReplicas) {
-      //                   sleep 10
-      //               }
-      //               openshift.set("triggers", "dc/uscis-egis-dev", "--manual")
-      //             }
-      //           }
-      //         }
-      //       }
-      //     }
-      //     stage('Deploy DEV') {
-      //       steps {
-      //         script {
-      //           openshift.withCluster() {
-      //             openshift.withProject(env.DEV_PROJECT) {
-      //               openshift.selector("dc", "uscis-egis-dev").rollout().latest();
-      //             }
-      //           }
-      //         }
-      //       }
-      //     }
-      //     stage('Promote to STAGE?') {
-      //       steps {
-      //         script {
-      //           openshift.withCluster() {
-      //             openshift.tag("${env.DEV_PROJECT}/uscis-egis-dev:latest", "${env.STAGE_PROJECT}/uscis-egis-dev:${version}")
-      //           }
-      //         }
-      //       }
-      //     }
-      //     stage('Deploy STAGE') {
-      //       steps {
-      //         script {
-      //           openshift.withCluster() {
-      //             openshift.withProject(env.STAGE_PROJECT) {
-      //               if (openshift.selector('dc', 'uscis-egis-stage').exists()) {
-      //                 openshift.selector('dc', 'uscis-egis-stage').delete()
-      //                 openshift.selector('svc', 'uscis-egis-stage').delete()
-      //                 openshift.selector('route', 'uscis-egis-stage').delete()
-      //               }
-
-      //               openshift.newApp("uscis-egis-stage:${version}").narrow("svc").expose()
-      //               openshift.set("probe dc/uscis-egis-stage --readiness --get-url=http://:8080/actuator/health --initial-delay-seconds=30 --failure-threshold=10 --period-seconds=10")
-      //               openshift.set("probe dc/uscis-egis-stage --liveness  --get-url=http://:8080/actuator/health --initial-delay-seconds=180 --failure-threshold=10 --period-seconds=10")
-      //             }
-      //           }
-      //         }
-      //       }
-      //     }
-      //   }
-      // }
