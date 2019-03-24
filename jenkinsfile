@@ -18,9 +18,9 @@ if (BRANCH_NAME != 'master') {
 
 pipeline {
   agent { label 'maven' }
-   notifyBuild("STARTED")
-  stages {
    
+  stages {
+   notifyBuild("STARTED")
     stage('Build App') {
             steps {
               git branch: BRANCH_NAME , url: GITURL
