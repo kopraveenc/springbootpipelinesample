@@ -34,16 +34,16 @@ pipeline {
         jacoco classPattern: 'target/classes', execPattern: 'target/**.exec', sourcePattern: 'src/main/java'
       }
     }
-    stage('Code Analysis') {
-      steps {
-        // withSonarQubeEnv('ODOS-Demo-Prep-Sonar') {
-        //   sh "${mvnCmd} sonar:sonar -DskipTests=true"
-        // }
-        // withCredentials([string(credentialsId: 'jenkins-sonar-token', variable: 'SONARUSER')]) {
-        //   sh "${mvnCmd} sonar:sonar -Dsonar.host.url=http://54.174.83.127:9000 -DskipTests=true -Dsonar.login=${env.SONARUSER}"
-        // }
-      }
-    }
+    // stage('Code Analysis') {
+    //   steps {
+    //     // withSonarQubeEnv('ODOS-Demo-Prep-Sonar') {
+    //     //   sh "${mvnCmd} sonar:sonar -DskipTests=true"
+    //     // }
+    //     // withCredentials([string(credentialsId: 'jenkins-sonar-token', variable: 'SONARUSER')]) {
+    //     //   sh "${mvnCmd} sonar:sonar -Dsonar.host.url=http://54.174.83.127:9000 -DskipTests=true -Dsonar.login=${env.SONARUSER}"
+    //     // }
+    //   }
+    // }
     stage('Archive App') {
       steps {
         sh "${mvnCmd} deploy -X -DskipTests=true"
@@ -136,6 +136,7 @@ pipeline {
     }
   }
 }
+
   post {
     success {
       notifyBuild("SUCCESSFUL")
