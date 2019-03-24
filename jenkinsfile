@@ -33,8 +33,8 @@ def version, mvnCmd = "mvn -s config/cicd-settings-nexus3.xml"
 
         stage('Build Docker Image')  {
           steps {
-                    docker.withRegistry('https://sds.redii.net/', 'redii-e.joe') {
-                        def app = docker.build("sds.redii.net/e-joe/spring-pet-clinic-demo:v1",'.')
+                    docker.withRegistry('http://nexus-cicd-admin.apps.ose.hcitc-unisys.com/repository/docker/', 'dockerrepocredentials') {
+                        def app = docker.build("http://nexus-cicd-admin.apps.ose.hcitc-unisys.com/repository/docker/sbx:latest",'.')
                         app.push()
                     }
         
@@ -42,7 +42,7 @@ def version, mvnCmd = "mvn -s config/cicd-settings-nexus3.xml"
             }
           }
         }
-      
+
 
 
           /*
