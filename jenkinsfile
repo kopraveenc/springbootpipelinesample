@@ -102,7 +102,7 @@ def notifyBuild(String buildStatus = 'STARTED') {
   }
 
   // Send notifications
-  slackSend(color: color, message: summary, channel: '#PraveenK')
+  slackSend(color: color, message: summary, channel: '#cicd-notifications')
 }
 
 
