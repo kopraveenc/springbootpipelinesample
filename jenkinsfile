@@ -115,38 +115,38 @@ pipeline {
         }
       }
     }
-  stage('Production Approval') {
-    agent none
-    when {expression {NEEDS_APPROVAL == true}}
-    steps {
-      sendApprovalEmail(BASE_IMAGE, ENVIRONMENT)
-      timeout(60) {
-        input message: "Approve ${BASE_IMAGE} for deployment to ${ENVIRONMENT}?", ok: 'Approve'
-      }
-    }
-  }
-  stage('Deploy DEV') {
-    when {expression{DEPLOY == true }}
-    steps {
-      script {
-        openshift.withCluster() {
-          openshift.withProject(PROJECT) {
-            openshift.selector("dc", IMAGE).rollout().latest();
-          }
-        }
-      }
-    }
-  }
+  // stage('Production Approval') {
+  //   agent none
+  //   when {expression {NEEDS_APPROVAL == true}}
+  //   steps {
+  //     sendApprovalEmail(BASE_IMAGE, ENVIRONMENT)
+  //     timeout(60) {
+  //       input message: "Approve ${BASE_IMAGE} for deployment to ${ENVIRONMENT}?", ok: 'Approve'
+  //     }
+  //   }
+  // }
+  // stage('Deploy DEV') {
+  //   when {expression{DEPLOY == true }}
+  //   steps {
+  //     script {
+  //       openshift.withCluster() {
+  //         openshift.withProject(PROJECT) {
+  //           openshift.selector("dc", IMAGE).rollout().latest();
+  //         }
+  //       }
+  //     }
+  //   }
+  // }
 }
 
-  post {
-    success {
-      notifyBuild("SUCCESSFUL")
-    }
-    failure {
-      notifyBuild('FAILURE')
-    }
-  }
+  // post {
+  //   success {
+  //     notifyBuild("SUCCESSFUL")
+  //   }
+  //   failure {
+  //     notifyBuild('FAILURE')
+  //   }
+  // }
 }
 
 // def sendApprovalEmail(String image, String deployment) {
