@@ -60,8 +60,55 @@ pipeline {
 
 
   }
+
+  post {
+    success {
+      notifyBuild("SUCCESSFUL")
+    }
+    failure {
+      notifyBuild('FAILURE')
+    }
+  }
+
 }
       
+
+
+
+def sendApprovalEmail(String image, String deployment) {
+ // def subject = "Jenkins job ${image} is ready for deployment to ${deployment}"
+    def subject = "Jenkins job  is ready for deployment ...."
+
+  // def body = """<p>Jenkins job <b>${image}</b> has successfully passed its quality gates and is ready for deployment to <b>${deployment}</b></p>
+  //   <p><a href="${env.BUILD_URL}">View the build status</a></p>
+  //   <p><a href="${env.BUILD_URL}/input">Approve or reject ${image} for automated deployment to <b>${deployment}</b></a>"""
+
+def body = "Approval email message......"
+
+  mail body: body, from: 'unisys.uscis-egis.jenkins@gmail.com', subject: subject, to: 'praveen.kosgi@unisys.com', charset: 'UTF-8', mimeType: 'text/html'
+}
+
+def notifyBuild(String buildStatus = 'STARTED') {
+  // build status of null means successful
+  buildStatus = buildStatus ?: 'SUCCESSFUL'
+
+  def color = 'danger'  //red
+  def subject = "${buildStatus}: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]'"
+  def summary = "${subject} (${env.BUILD_URL})"
+
+  // Override default values based on build status
+  if (buildStatus == 'STARTED' || buildStatus == 'SUCCESSFUL' || buildStatus == 'SUCCESS') {
+    color = 'good'
+  }
+
+  // Send notifications
+  slackSend(color: color, message: summary, channel: '#PraveenK')
+}
+
+
+
+
+
   
 
 
@@ -160,66 +207,6 @@ pipeline {
   //   }
   // }
 //}
-
-  // post {
-  //   success {
-  //     notifyBuild("SUCCESSFUL")
-  //   }
-  //   failure {
-  //     notifyBuild('FAILURE')
-  //   }
-  // }
-// }
-
-// def sendApprovalEmail(String image, String deployment) {
-//   def subject = "Jenkins job ${image} is ready for deployment to ${deployment}"
-
-//   def body = """<p>Jenkins job <b>${image}</b> has successfully passed its quality gates and is ready for deployment to <b>${deployment}</b></p>
-//     <p><a href="${env.BUILD_URL}">View the build status</a></p>
-//     <p><a href="${env.BUILD_URL}/input">Approve or reject ${image} for automated deployment to <b>${deployment}</b></a>"""
-//   mail body: body, from: 'unisys.odosii.jenkins@gmail.com', subject: subject, to: 'brandon.whiteman@coheretechnology.com', charset: 'UTF-8', mimeType: 'text/html'
-// }
-
-// def notifyBuild(String buildStatus = 'STARTED') {
-//   // build status of null means successful
-//   buildStatus = buildStatus ?: 'SUCCESSFUL'
-
-//   def color = 'danger'  //red
-//   def subject = "${buildStatus}: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]'"
-//   def summary = "${subject} (${env.BUILD_URL})"
-
-//   // Override default values based on build status
-//   if (buildStatus == 'STARTED' || buildStatus == 'SUCCESSFUL' || buildStatus == 'SUCCESS') {
-//     color = 'good'
-//   }
-
-//   // Send notifications
-//   slackSend(color: color, message: summary, channel: '#build-status')
-// }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
