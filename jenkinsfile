@@ -5,7 +5,7 @@ def BASE_IMAGE = 'sb-api'
 def IMAGE = BASE_IMAGE
 def DEPLOY_BRANCHES = ['master']
 def APPROVAL_BRANCHES = ['master']
-
+def BRANCH_NAME = 'master'
 def ENVIRONMENT = BRANCH_NAME
 
 def DEPLOY = DEPLOY_BRANCHES.contains(BRANCH_NAME)
