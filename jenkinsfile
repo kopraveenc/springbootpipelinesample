@@ -18,45 +18,26 @@ if (BRANCH_NAME != 'master') {
 
 pipeline {
   agent { label 'maven' }
-   
   stages {
-   
-    stage('Build App') {
-            steps {
+    stage('Build App') 
+        {
+            steps 
+              {
               notifyBuild("STARTED")
               git branch: BRANCH_NAME , url: GITURL
-               script {
-                   def pom = readMavenPom file: 'pom.xml'
-                   version = pom.version
-               }
+              script { def pom = readMavenPom file: 'pom.xml' version = pom.version  }
               sh "${mvnCmd} install -DskipTests=true"
-            }
-          }
-          stage('Test') {
+              }
+        }
+    stage('Test') 
+        {
             steps {
               sh "${mvnCmd} test"
               step([$class: 'JUnitResultArchiver', testResults: '**/target/surefire-reports/TEST-*.xml'])
             }
-          }
-          stage('Code Analysis') {
-            steps {
-              script {
-                sh SONAR
-              }
-            }
-          }
-
-         stage('Build Image and Deploy to OCP') {
-     
-            steps {
-              script {
-                sh OCPWH
-                    
-                  }
-                }
-              }
-
-
+        }
+    stage('Code Analysis')  {steps  { script {sh SONAR} } }
+    stage('Build Image and Deploy to OCP')  { steps {script {sh OCPWH}} }
   }
 
   post {
@@ -70,8 +51,6 @@ pipeline {
 
 }
       
-
-
 def notifyBuild(String buildStatus = 'STARTED') {
   // build status of null means successful
   buildStatus = buildStatus ?: 'SUCCESSFUL'
@@ -88,19 +67,3 @@ def notifyBuild(String buildStatus = 'STARTED') {
   // Send notifications
   slackSend(color: color, message: summary, channel: '#cicd-notifications')
 }
-
-
-def sendApprovalEmail(String image, String deployment) {
- // def subject = "Jenkins job ${image} is ready for deployment to ${deployment}"
-    def subject = "Jenkins job  is ready for deployment ...."
-
-  // def body = """<p>Jenkins job <b>${image}</b> has successfully passed its quality gates and is ready for deployment to <b>${deployment}</b></p>
-  //   <p><a href="${env.BUILD_URL}">View the build status</a></p>
-  //   <p><a href="${env.BUILD_URL}/input">Approve or reject ${image} for automated deployment to <b>${deployment}</b></a>"""
-
-def body = "Approval email message......"
-
-  mail body: body, from: 'unisys.uscis-egis.jenkins@gmail.com', subject: subject, to: 'praveen.kosgi@unisys.com', charset: 'UTF-8', mimeType: 'text/html'
-}
-
-
