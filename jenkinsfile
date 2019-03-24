@@ -20,9 +20,10 @@ pipeline {
   agent { label 'maven' }
    
   stages {
-   notifyBuild("STARTED")
+   
     stage('Build App') {
             steps {
+              notifyBuild("STARTED")
               git branch: BRANCH_NAME , url: GITURL
                script {
                    def pom = readMavenPom file: 'pom.xml'
